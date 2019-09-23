@@ -13,6 +13,8 @@ all:
 	$(TARGET)
 install: $(TARGET)
 	cp $(TARGET) $(INSTALL_DIR)
+	cp 90-ch551-bl.rules /etc/udev/rules.d
+	udevadm control --reload-rules
 clean:
 	rm $(TARGET) *.o
 .PHONY: all clean install
