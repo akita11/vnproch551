@@ -16,6 +16,7 @@ uint32_t KT_BinIO::Read(char *pszInput)
         return 0;
     }
     fclose(f);
+    u32Size = lSize;
     return 1;
 }
 uint32_t KT_BinIO::Write(char *pszOutput)

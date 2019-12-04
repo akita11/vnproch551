@@ -109,7 +109,7 @@ int main(int argc, char const *argv[])
         return 1;
 	}
     /* load flash file */
-	ktBin.u32Size = 10 * 1024;
+	ktBin.u32Size = 63 * 1024;	//make it super big for initialization, big enough to hold CH559 size
 	ktBin.InitBuffer();
 	if (!ktBin.Read((char*)argv[1])) {
 		printf("Read file: ERROR\n");
@@ -222,16 +222,19 @@ int main(int argc, char const *argv[])
 	}
 	
 	/* Write */
-	printf("Write\n");
+	printf("Write %d bytes from bin file.\n",ktBin.u32Size);
 	/* Progress */
-	uint32_t n;
-	n = 10 * 1024 / 56;
-	ktProg.SetMax(n);
+	uint32_t writeDataSize,totalPackets,lastPacketSize;
+	writeDataSize = ktBin.u32Size + 1;
+	totalPackets = (writeDataSize+55) / 56;
+	lastPacketSize = writeDataSize % 56;
+	if (lastPacketSize==0) lastPacketSize = 56; 
+	ktProg.SetMax(totalPackets);
 	ktProg.SetNum(50);
 	ktProg.SetPos(0);
 	ktProg.Display();
 
-	for (i = 0; i < n; ++i) {
+	for (i = 0; i < totalPackets; ++i) {
 		uint16_t u16Tmp;
 		uint32_t j;
 		/* Write flash */
@@ -243,6 +246,7 @@ int main(int argc, char const *argv[])
 			}
 		}
 		u16Tmp = i * 0x38;
+		u8WriteCmd[1] = 0x3D - (i<(totalPackets-1)?0:(56-lastPacketSize));	//last packet can be smaller
 		u8WriteCmd[3] = (uint8_t)u16Tmp;
 		u8WriteCmd[4] = (uint8_t)(u16Tmp >> 8);
 		if (!Write(u8WriteCmd, u8WriteCmd[1] + 3)) {
