@@ -100,7 +100,6 @@ int main(int argc, char const *argv[])
 	KT_BinIO ktBin;
 	KT_ProgressBar ktProg;
 
-	printf("\033[2J\033[1;1H");
 	printf("------------------------------------------------------------------\n");
 	printf("CH551 Programmer by VNPro\n");
 	printf("------------------------------------------------------------------\n");
