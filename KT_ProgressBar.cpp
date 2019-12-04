@@ -1,5 +1,12 @@
 #include "KT_ProgressBar.h"
 
+KT_ProgressBar::KT_ProgressBar(){
+    u32Max = 100;
+    cSig = '.';
+    u32Num = 100;
+    u32Pos = 0;
+}
+
 void KT_ProgressBar::SetNum(uint32_t u32Num)
 {
     this->u32Num = u32Num;

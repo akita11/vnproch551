@@ -7,11 +7,12 @@
 
 class KT_ProgressBar {
 private:
-    uint32_t u32Max = 100;
-    char cSig = '.';
-    uint32_t u32Num = 100;
-    uint32_t u32Pos = 0;
+    uint32_t u32Max;
+    char cSig;
+    uint32_t u32Num;
+    uint32_t u32Pos;
 public:
+    KT_ProgressBar();
     void SetNum(uint32_t u32Num);
     void SetSig(char cSig);
     void SetMax(uint32_t u32Max);
