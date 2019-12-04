@@ -99,6 +99,7 @@ int main(int argc, char const *argv[])
 	uint32_t i;
 	KT_BinIO ktBin;
 	KT_ProgressBar ktProg;
+	uint8_t chipType;
 
 	printf("------------------------------------------------------------------\n");
 	printf("CH551 Programmer by VNPro\n");
@@ -143,6 +144,7 @@ int main(int argc, char const *argv[])
 		printf("Not support\n");
 		return 1;
 	}
+	chipType = u8Buff[4];
 	
 	/* Bootloader and Chip ID */
 	if (!Write(u8IdCmd, u8IdCmd[1] + 3)) {
@@ -170,7 +172,13 @@ int main(int argc, char const *argv[])
 	for (i = 0; i < 8; ++i) {
 		u8Mask[i] = u8Sum;
 	}
-	u8Mask[7] += 0x51;
+	
+	if (chipType==0x52){
+		u8Mask[7] += u8Buff[15];	//need to verify if this also work on CH551, on CH552, this byte is 0x52
+	}else{
+		u8Mask[7] += 0x51;
+	}
+	
 	printf("XOR Mask: ");
 	for (i = 0; i < 8; ++i) {
 		printf("%02X ", u8Mask[i]);
