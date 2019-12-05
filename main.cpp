@@ -63,6 +63,14 @@ uint8_t u8WriteCmd[64] = {
 };
 uint8_t u8WriteRespond = 6;
 
+/* Verify */
+uint8_t u8VerifyCmd[64] = {
+	0xA6, 0x3D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	/* byte 4 Low Address (first = 1) */
+	/* byte 5 High Address */
+};
+uint8_t u8VerifyRespond = 6;
+
 uint8_t u8ReadCmd[64] = {
 	0x00
 };
@@ -233,10 +241,12 @@ int main(int argc, char const *argv[])
 	printf("Write %d bytes from bin file.\n",ktBin.u32Size);
 	/* Progress */
 	uint32_t writeDataSize,totalPackets,lastPacketSize;
-	writeDataSize = ktBin.u32Size + 1;
+	writeDataSize = ktBin.u32Size;
 	totalPackets = (writeDataSize+55) / 56;
 	lastPacketSize = writeDataSize % 56;
-	if (lastPacketSize==0) lastPacketSize = 56; 
+	//make it multiple of 8
+	lastPacketSize = (lastPacketSize+7)/8*8;
+	if (lastPacketSize==0) lastPacketSize = 56;
 	ktProg.SetMax(totalPackets);
 	ktProg.SetNum(50);
 	ktProg.SetPos(0);
@@ -270,14 +280,67 @@ int main(int argc, char const *argv[])
 		ktProg.Display();
 	}
 
+	printf("\n");
+	printf("Write complete!!!\n");
+	printf("Verify chip\n");
+	
+	/* Set Flash Address to 0 */
+	if (!Write(u8AddessCmd, u8AddessCmd[1] + 3)) {
+		printf("Send Address: Fail\n");
+		return 1;
+	}
+	
+	if (!Read(u8Buff, u8AddessRespond)) {
+		printf("Read Address: Fail\n");
+		return 1;
+	}
+	
+	//just change A5 packet to A6
+	ktProg.SetPos(0);
+	ktProg.Display();
+
+	for (i = 0; i < totalPackets; ++i) {
+		uint16_t u16Tmp;
+		uint32_t j;
+		/* Verify flash */
+		memmove(&u8VerifyCmd[8], &ktBin.pReadBuff[i * 0x38], 0x38);
+		for (j = 0; j < 7; ++j) {
+			uint32_t ii;
+			for (ii = 0; ii < 8; ++ii) {
+				u8VerifyCmd[8 + j * 8 + ii] ^= u8Mask[ii];
+			}
+		}
+		u16Tmp = i * 0x38;
+		u8VerifyCmd[1] = 0x3D - (i<(totalPackets-1)?0:(56-lastPacketSize));	//last packet can be smaller
+		u8VerifyCmd[3] = (uint8_t)u16Tmp;
+		u8VerifyCmd[4] = (uint8_t)(u16Tmp >> 8);
+		if (!Write(u8VerifyCmd, u8VerifyCmd[1] + 3)) {
+			printf("Send Verify: Fail\n");
+			return 1;
+		}
+		
+		if (!Read(u8Buff, u8VerifyRespond)) {
+			printf("Read Verify: Fail\n");
+			return 1;
+		}
+		if (u8Buff[4]!=0 || u8Buff[5]!=0){
+			printf("\nPacket %d doesn't match.\n",i);
+			return 1;
+		}
+		ktProg.SetPos(i + 1);
+		ktProg.Display();
+	}
+	
+	printf("\n");
+	printf("Verify complete!!!\n");
+	
+	printf("------------------------------------------------------------------\n");
+	
 	/* Reset and Run */
 	Write(u8ResetCmd, u8ResetCmd[1] + 3);
 		//printf("Send Reset: Fail\n");
 		//return 1;
 	//}
-	printf("\n");
-	printf("Write complete!!!\n");
-	printf("------------------------------------------------------------------\n");
 
 	return 0;
 }
