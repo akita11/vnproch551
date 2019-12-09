@@ -182,7 +182,7 @@ int main(int argc, char const *argv[])
 	}
 	
 	if (chipType==0x52){
-		u8Mask[7] += u8Buff[15];	//need to verify if this also work on CH551, on CH552, this byte is 0x52
+		u8Mask[7] += 0x52;	//need to verify if this also work on CH551, on CH552, this byte is 0x52. On a brand new CH552, it respond D2?
 	}else{
 		u8Mask[7] += 0x51;
 	}
