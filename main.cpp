@@ -140,7 +140,7 @@ int main(int argc, char const *argv[])
 	}
 
 	/* Check MCU ID */
-	if ((u8Buff[4] != 0x51) && (u8Buff[5] != 0x11)) {
+	if ((u8Buff[4] != 0x51) || (u8Buff[5] != 0x11)) {
 		printf("Not support\n");
 		return 1;
 	}
