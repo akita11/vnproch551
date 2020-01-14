@@ -1,3 +1,4 @@
+#!/bin/bash
 rm -f vnproch551
 rm -f *.o
 g++ -c main.cpp -o main.o
