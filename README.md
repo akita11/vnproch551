@@ -1,5 +1,6 @@
 # vnproch55x
 CH55X Programming tool
+
 Usage: vnproch55x flash_file.bin
 
 ## Supported Devices
