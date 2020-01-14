@@ -1,3 +1,3 @@
-# vnproch551
+# vnproch55x
 CH551 Programming tool
-Usage: vnproch551 flash_file.bin
+Usage: vnproch55x flash_file.bin

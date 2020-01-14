@@ -105,7 +105,7 @@ int main(int argc, char const *argv[])
 	printf("CH551 Programmer by VNPro\n");
 	printf("------------------------------------------------------------------\n");
 	if (argc != 2) {
-		printf("usage: vnproch551 flash_file.bin\n");
+		printf("usage: vnproch55x flash_file.bin\n");
 		printf("------------------------------------------------------------------\n");
         return 1;
 	}
