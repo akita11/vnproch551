@@ -19,20 +19,7 @@ uint32_t KT_BinIO::Read(char *pszInput)
     u32Size = lSize;
     return 1;
 }
-uint32_t KT_BinIO::Write(char *pszOutput)
-{
-    FILE *f;
-    f = fopen(pszOutput, "wb");
-    if (f == NULL) {
-        return 0;
-    }
-    if (!fwrite(pWriteBuff, u32Size, 1, f)) {
-        fclose(f);
-        return 0;
-    }
-    fclose(f);
-    return 1;
-}
+
 uint32_t KT_BinIO::InitBuffer()
 {
     pReadBuff = (uint8_t*)malloc(u32Size);

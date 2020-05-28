@@ -12,7 +12,6 @@ public:
     uint8_t *pReadBuff;
     uint8_t *pWriteBuff;
     uint32_t Read(char *pszInput);
-    uint32_t Write(char *pszOutput);
     uint32_t InitBuffer();
     void FreeBuffer();
     uint32_t u32Size;
