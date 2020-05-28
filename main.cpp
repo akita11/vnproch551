@@ -13,7 +13,7 @@ uint8_t u8Mask[8];
 
 /* Detect MCU */
 uint8_t u8DetectCmd[64] = {
-	0xA1, 0x12, 0x00, 0x51, 0x11, 0x4D, 0x43, 0x55,
+	0xA1, 0x12, 0x00, 0x00, 0x11, 0x4D, 0x43, 0x55,
 	0x20, 0x49, 0x53, 0x50, 0x20, 0x26, 0x20, 0x57,
 	0x43, 0x48, 0x2e, 0x43, 0x4e
 };
@@ -24,6 +24,9 @@ uint8_t u8IdCmd[64] = {
 	0xA7, 0x02, 0x00, 0x1F, 0x00
 };
 uint8_t u8IdRespond = 30;
+
+/* Current CH55x device */
+uint8_t u8DeviceID = 0;
 
 /* Enable ISP */
 uint8_t u8InitCmd[64] = {
@@ -110,10 +113,10 @@ int main(int argc, char const *argv[])
 	uint8_t chipType;
 
 	printf("------------------------------------------------------------------\n");
-	printf("CH551 Programmer by VNPro\n");
+	printf("CH55x Programmer by VNPro\n");
 	printf("------------------------------------------------------------------\n");
 	if (argc != 2) {
-		printf("usage: vnproch551 flash_file.bin\n");
+		printf("usage: vnproch55x flash_file.bin\n");
 		printf("------------------------------------------------------------------\n");
         return 1;
 	}
@@ -130,7 +133,7 @@ int main(int argc, char const *argv[])
 	h = libusb_open_device_with_vid_pid(NULL, 0x4348, 0x55e0);
 
 	if (h == NULL) {
-		printf("Found no CH551 USB\n");
+		printf("Found no CH55x USB\n");
 		return 1;
 	}
 	
@@ -147,13 +150,43 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 
-	/* Check MCU ID */
-	if (((u8Buff[4] != 0x51) && (u8Buff[4] != 0x52)) || (u8Buff[5] != 0x11)) {
+	/* Store refrence to MCU device ID */
+	u8DeviceID = u8Buff[4];
+
+	/* Check MCU series/family? ID */
+	if ((u8Buff[5] != 0x11)) {
 		printf("Not support\n");
 		return 1;
 	}
-	chipType = u8Buff[4];
+
+	/* Check MCU ID */
+	if (
+		(u8DeviceID != 0x51) && 
+		(u8DeviceID != 0x52) && 
+		(u8DeviceID != 0x54) && 
+		(u8DeviceID != 0x58) && 
+		(u8DeviceID != 0x59)
+	) {
+		printf("Device not supported 0x%x\n", u8DeviceID);
+		return 1;
+	}
 	
+	printf("Found Device CH55%x\n", u8DeviceID);
+
+	/* Bootloader and Chip ID */
+	if (
+		(u8DeviceID != 0x51) && 
+		(u8DeviceID != 0x52) && 
+		(u8DeviceID != 0x54) && 
+		(u8DeviceID != 0x58) && 
+		(u8DeviceID != 0x59)
+	) {
+		printf("Device not supported 0x%x\n", u8DeviceID);
+		return 1;
+	}
+	
+	printf("Found Device CH55%x\n", u8DeviceID);
+
 	/* Bootloader and Chip ID */
 	if (!Write(u8IdCmd, u8IdCmd[1] + 3)) {
 		printf("Send ID: Fail\n");
@@ -180,13 +213,7 @@ int main(int argc, char const *argv[])
 	for (i = 0; i < 8; ++i) {
 		u8Mask[i] = u8Sum;
 	}
-	
-	if (chipType==0x52){
-		u8Mask[7] += 0x52;	//need to verify if this also work on CH551, on CH552, this byte is 0x52. On a brand new CH552, it respond D2?
-	}else{
-		u8Mask[7] += 0x51;
-	}
-	
+	u8Mask[7] += u8DeviceID;
 	printf("XOR Mask: ");
 	for (i = 0; i < 8; ++i) {
 		printf("%02X ", u8Mask[i]);
