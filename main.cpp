@@ -171,21 +171,7 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 	
-	printf("Found Device CH55%x\n", u8DeviceID);
-
-	/* Bootloader and Chip ID */
-	if (
-		(u8DeviceID != 0x51) && 
-		(u8DeviceID != 0x52) && 
-		(u8DeviceID != 0x54) && 
-		(u8DeviceID != 0x58) && 
-		(u8DeviceID != 0x59)
-	) {
-		printf("Device not supported 0x%x\n", u8DeviceID);
-		return 1;
-	}
-	
-	printf("Found Device CH55%x\n", u8DeviceID);
+	printf("Found Device CH5%x\n", u8DeviceID);
 
 	/* Bootloader and Chip ID */
 	if (!Write(u8IdCmd, u8IdCmd[1] + 3)) {
