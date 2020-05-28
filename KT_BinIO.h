@@ -16,6 +16,7 @@ public:
     void FreeBuffer();
     uint32_t u32Size;
 protected:
+    int parse_hex_line(char *theline, int *bytes, int *addr, int *num, int *code);
 };
 
 #endif
