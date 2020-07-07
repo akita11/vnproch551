@@ -5,6 +5,7 @@
 #include <libusb-1.0/libusb.h>
 #include "KT_BinIO.h"
 #include "KT_ProgressBar.h"
+#include "serial.h"
 
 KT_BinIO ktFlash;
 
@@ -111,11 +112,12 @@ int main(int argc, char const *argv[])
 	KT_BinIO ktBin;
 	KT_ProgressBar ktProg;
 	uint8_t chipType;
+    bool usingSerial;
 
 	printf("------------------------------------------------------------------\n");
 	printf("CH55x Programmer by VNPro\n");
 	printf("------------------------------------------------------------------\n");
-	if (argc != 2) {
+	if (argc != 2 && argc != 3) {
 		printf("usage: vnproch55x flash_file.bin\n");
 		printf("------------------------------------------------------------------\n");
         return 1;
@@ -123,21 +125,49 @@ int main(int argc, char const *argv[])
     /* load flash file */
 	ktBin.u32Size = 63 * 1024;	//make it super big for initialization, big enough to hold CH559 size
 	ktBin.InitBuffer();
-	if (!ktBin.Read((char*)argv[1])) {
+    
+    char *fileName = NULL;
+    usingSerial = false;
+    char *serialName = NULL;
+    union filedescriptor serialFd;
+    
+    for (int i=1;i<argc;i++){
+        if ( ((char*)argv[i])[0] != '-' ){
+            fileName = (char*)argv[i];
+        }else{
+            if ( ((char*)argv[i])[1] == 's' ){
+                usingSerial = true;
+                serialName = &(((char*)argv[i])[2]);
+            }
+        }
+    }
+    
+	if (!ktBin.Read(fileName)) {
 		printf("Read file: ERROR\n");
 		return 0;
 	}
 
 	libusb_init(NULL);
 	
-	h = libusb_open_device_with_vid_pid(NULL, 0x4348, 0x55e0);
-
-	if (h == NULL) {
-		printf("Found no CH55x USB\n");
-		return 1;
-	}
-	
-	libusb_claim_interface(h, 0);
+    if (usingSerial){
+        printf("Using Serial %s\n",serialName);
+        
+        if (serial_open(serialName, 57600, &serialFd)==-1) {
+            printf("Serial open failed\n");
+            return -1;
+        }
+        serial_close(&serialFd);
+        return 1;
+    }else{
+        h = libusb_open_device_with_vid_pid(NULL, 0x4348, 0x55e0);
+        
+        if (h == NULL) {
+            printf("Found no CH55x USB\n");
+            return 1;
+        }
+        
+        libusb_claim_interface(h, 0);
+    }
 	
 	/* Detect MCU */
 	if (!Write(u8DetectCmd, u8DetectCmd[1] + 3)) {

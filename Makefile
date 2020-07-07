@@ -1,6 +1,6 @@
 CPP=g++
 LIBS=-lusb-1.0
-SRCS=main.cpp KT_BinIO.cpp KT_ProgressBar.cpp
+SRCS=main.cpp KT_BinIO.cpp KT_ProgressBar.cpp ser_posix.c
 OBJS=$(SRCS:.cpp=.o)
 TARGET=vnproch55x
 INSTALL_DIR=/usr/bin
