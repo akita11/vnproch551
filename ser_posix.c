@@ -48,7 +48,7 @@
 int verbose = 0;
 char progname[] = "CH55x";
 
-long serial_recv_timeout = 5000; /* ms */
+long serial_recv_timeout = 500; /* ms */
 
 struct baud_mapping {
   long baud;
