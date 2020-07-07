@@ -24,7 +24,7 @@
  * Posix serial interface for avrdude.
  */
 
-#if !defined(WIN32NATIVE)
+#if !defined(WIN32NATIVE) && !defined(_WIN32_WINNT) && !defined(__WIN32__)
 
 
 #include <ctype.h>

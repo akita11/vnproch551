@@ -1,6 +1,13 @@
-CPP=g++
+OS_NAME := $(shell uname -s | tr A-Z a-z)
+
+ifneq (,$(findstring cygwin,$(OS_NAME)))
+	CPP=i686-w64-mingw32-g++
+else
+	CPP=g++
+endif
+
 LIBS=-lusb-1.0
-SRCS=main.cpp KT_BinIO.cpp KT_ProgressBar.cpp ser_posix.c
+SRCS=main.cpp KT_BinIO.cpp KT_ProgressBar.cpp ser_posix.c ser_win32.c
 OBJS=$(SRCS:.cpp=.o)
 TARGET=vnproch55x
 INSTALL_DIR=/usr/bin
