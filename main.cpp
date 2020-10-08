@@ -238,10 +238,12 @@ int main(int argc, char const *argv[])
 
 	/* Store refrence to MCU device ID */
 	u8DeviceID = u8Buff[4];
+    
+    printf("MCU ID: %02X %02X\n", u8Buff[4], u8Buff[5]);
 
 	/* Check MCU series/family? ID */
 	if ((u8Buff[5] != 0x11)) {
-		printf("Not support\n");
+		printf("Not support, family ID.\n");
 		return 1;
 	}
 
@@ -288,7 +290,7 @@ int main(int argc, char const *argv[])
 	printf("ID: %02X %02X %02X %02X\n", u8Buff[22], u8Buff[23], u8Buff[24], u8Buff[25]);
 	/* check bootloader version */
 	if ( ((u8Buff[19] != 0x02) || (u8Buff[20] != 0x03) || (u8Buff[21] != 0x01)) && ((u8Buff[19] != 0x02) || (u8Buff[20] != 0x04) || (u8Buff[21] != 0x00)) ){
-		printf("Not support\n");
+		printf("Not support, Bootloader version.\n");
 		return 1;
 	}
 	/* Calc XOR Mask */
