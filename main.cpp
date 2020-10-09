@@ -208,6 +208,11 @@ int main(int argc, char const *argv[])
             return 1;
         }
         
+        struct libusb_device_descriptor desc;
+        if (libusb_get_device_descriptor(libusb_get_device(h), &desc) >= 0 ) {
+            printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
+        }
+        
         libusb_claim_interface(h, 0);
     }
 	
