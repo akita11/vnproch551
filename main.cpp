@@ -12,6 +12,7 @@ KT_BinIO ktFlash;
 
 uint8_t u8Buff[64];
 uint8_t u8Mask[8];
+uint16_t u16WrittenAddr;
 
 /* Detect MCU */
 uint8_t u8DetectCmd[64] = {
@@ -29,6 +30,7 @@ uint8_t u8IdRespond = 30;
 
 /* Current CH55x device */
 uint8_t u8DeviceID = 0;
+uint8_t u8FamilyID = 0;
 
 /* Enable ISP */
 uint8_t u8InitCmd[64] = {
@@ -38,7 +40,7 @@ uint8_t u8InitCmd[64] = {
 };
 uint8_t u8InitRespond = 6;
 
-/* Set Flash Address */
+/* Set Flash Address, mask protected*/
 uint8_t u8AddessCmd[64] = {
 	0xA3, 0x1E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -60,7 +62,7 @@ uint8_t u8ResetCmd[64] = {
 };
 uint8_t u8ResetRespond = 6;
 
-/* Write */
+/* Write, mask protected*/
 uint8_t u8WriteCmd[64] = {
 	0xA5, 0x3D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	/* byte 4 Low Address (first = 1) */
@@ -75,6 +77,8 @@ uint8_t u8VerifyCmd[64] = {
 	/* byte 5 High Address */
 };
 uint8_t u8VerifyRespond = 6;
+
+//A7 get ID.
 
 uint8_t u8ReadCmd[64] = {
 	0x00
@@ -212,7 +216,7 @@ int main(int argc, char const *argv[])
         if (libusb_get_device_descriptor(libusb_get_device(h), &desc) >= 0 ) {
             printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
         }
-        
+
         libusb_claim_interface(h, 0);
     }
 	
@@ -243,28 +247,31 @@ int main(int argc, char const *argv[])
 
 	/* Store refrence to MCU device ID */
 	u8DeviceID = u8Buff[4];
+    u8FamilyID = u8Buff[5];
     
     printf("MCU ID: %02X %02X\n", u8Buff[4], u8Buff[5]);
 
 	/* Check MCU series/family? ID */
-	if ((u8Buff[5] != 0x11)) {
+	if (u8FamilyID == 0x11) {
+        /* Check MCU ID */
+        if (
+            (u8DeviceID != 0x51) &&
+            (u8DeviceID != 0x52) &&
+            (u8DeviceID != 0x54) &&
+            (u8DeviceID != 0x58) &&
+            (u8DeviceID != 0x59)
+            ) {
+            printf("Device not supported 0x%x\n", u8DeviceID);
+            return 1;
+        }else{
+            printf("Found Device CH5%x\n", u8DeviceID);
+        }
+    }else if (u8FamilyID == 0x12) {
+        //todo: check MCU ID
+    }else{
 		printf("Not support, family ID.\n");
 		return 1;
 	}
-
-	/* Check MCU ID */
-	if (
-		(u8DeviceID != 0x51) && 
-		(u8DeviceID != 0x52) && 
-		(u8DeviceID != 0x54) && 
-		(u8DeviceID != 0x58) && 
-		(u8DeviceID != 0x59)
-	) {
-		printf("Device not supported 0x%x\n", u8DeviceID);
-		return 1;
-	}
-	
-	printf("Found Device CH5%x\n", u8DeviceID);
 
 	/* Bootloader and Chip ID */
     if (usingSerial){
@@ -292,7 +299,12 @@ int main(int argc, char const *argv[])
     }
     
 	printf("Bootloader: %d.%d.%d\n", u8Buff[19], u8Buff[20], u8Buff[21]);
-	printf("ID: %02X %02X %02X %02X\n", u8Buff[22], u8Buff[23], u8Buff[24], u8Buff[25]);
+    if (u8FamilyID == 0x11) {
+        printf("ID: %02X %02X %02X %02X\n", u8Buff[22], u8Buff[23], u8Buff[24], u8Buff[25]);
+    }else if (u8FamilyID == 0x12) {
+        printf("ID: %02X %02X %02X %02X %02X %02X %02X %02X\n", u8Buff[22], u8Buff[23], u8Buff[24], u8Buff[25], u8Buff[26], u8Buff[27], u8Buff[28], u8Buff[29]);
+    }
+    
 	/* check bootloader version */
 	if ( ((u8Buff[19] != 0x02) || (u8Buff[20] != 0x03) || (u8Buff[21] != 0x01)) && ((u8Buff[19] != 0x02) || (u8Buff[20] != 0x04) || (u8Buff[21] != 0x00)) ){
 		printf("Not support, Bootloader version.\n");
@@ -302,7 +314,11 @@ int main(int argc, char const *argv[])
 
 	uint8_t u8Sum;
 
-	u8Sum = u8Buff[22] + u8Buff[23] + u8Buff[24] + u8Buff[25];
+    if (u8FamilyID == 0x11) {
+        u8Sum = u8Buff[22] + u8Buff[23] + u8Buff[24] + u8Buff[25];
+    }else if (u8FamilyID == 0x12) {
+        u8Sum = u8Buff[22] + u8Buff[23] + u8Buff[24] + u8Buff[25] + u8Buff[26] + u8Buff[27] + u8Buff[28] + u8Buff[29];
+    }
 	for (i = 0; i < 8; ++i) {
 		u8Mask[i] = u8Sum;
 	}
@@ -444,6 +460,7 @@ int main(int argc, char const *argv[])
 		u8WriteCmd[1] = 0x3D - (i<(totalPackets-1)?0:(56-lastPacketSize));	//last packet can be smaller
 		u8WriteCmd[3] = (uint8_t)u16Tmp;
 		u8WriteCmd[4] = (uint8_t)(u16Tmp >> 8);
+        u16WrittenAddr = u16Tmp + u8WriteCmd[1] - 5;
         if (usingSerial){
             if (!WriteSerial(&serialFd, u8WriteCmd, u8WriteCmd[1] + 3)) {
                 printf("Send Write: Fail\n");
@@ -470,6 +487,35 @@ int main(int argc, char const *argv[])
 		ktProg.SetPos(i + 1);
 		ktProg.Display();
 	}
+    
+    if (u8FamilyID == 0x12) {   //seems an end packet is necessary for CH549
+        u8WriteCmd[1] = 0x05;
+        u8WriteCmd[3] = (uint8_t)u16WrittenAddr;
+        u8WriteCmd[4] = (uint8_t)(u16WrittenAddr >> 8);
+        if (usingSerial){
+            if (!WriteSerial(&serialFd, u8WriteCmd, u8WriteCmd[1] + 3)) {
+                printf("Send Write: Fail\n");
+                serial_close(&serialFd);
+                return 1;
+            }
+            
+            if (!ReadSerial(&serialFd, u8Buff, u8WriteRespond)) {
+                printf("Read Write: Fail\n");
+                serial_close(&serialFd);
+                return 1;
+            }
+        }else{
+            if (!Write(u8WriteCmd, u8WriteCmd[1] + 3)) {
+                printf("Send Write: Fail\n");
+                return 1;
+            }
+            
+            if (!Read(u8Buff, u8WriteRespond)) {
+                printf("Read Write: Fail\n");
+                return 1;
+            }
+        }
+    }
 
 	printf("\n");
 	printf("Write complete!!!\n");
