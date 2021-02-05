@@ -78,8 +78,6 @@ uint8_t u8VerifyCmd[64] = {
 };
 uint8_t u8VerifyRespond = 6;
 
-//A7 get ID.
-
 uint8_t u8ReadCmd[64] = {
 	0x00
 };
@@ -378,6 +376,64 @@ int main(int argc, char const *argv[])
             printf("Read ID: Fail\n");
             return 1;
         }
+    }
+    
+    /* get configuration */
+    if (u8FamilyID == 0x12) {
+        /* Read Boot Option */
+        uint8_t u8ReadOptionCmd[64] = {
+            0xA7, 0x02, 0x00, 0x1F, 0x00
+        };
+        uint8_t u8ReadOptionRespond = 30;
+        
+        //A8 set configuration, may be necessary for CH549
+        /* Write Boot Option */
+        uint8_t u8WriteOptionCmd[64] = {
+            0xa8, 0x0e, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0xd2, 0x00, 0x00
+        };
+        uint8_t u8WriteOptionRespond = 6;
+        //todo: add serial
+        if (!Write(u8ReadOptionCmd, u8ReadOptionCmd[1] + 3)) {
+            printf("Send Read Option: Fail\n");
+            return 1;
+        }
+        
+        if (!Read(u8Buff, u8ReadOptionRespond)) {
+            printf("Read Read Option: Fail\n");
+            return 1;
+        }
+        
+        /*printf("CONFIG: ");
+        for (int i=0;i<30;i++){
+            printf("%02X ",u8Buff[i]);
+        }
+        printf("\n");*/
+        
+        if (!Write(u8WriteOptionCmd, u8WriteOptionCmd[1] + 3)) {
+            printf("Send Write Option: Fail\n");
+            return 1;
+        }
+        
+        if (!Read(u8Buff, u8WriteOptionRespond)) {
+            printf("Read Write Option: Fail\n");
+            return 1;
+        }
+        
+        if (!Write(u8ReadOptionCmd, u8ReadOptionCmd[1] + 3)) {
+            printf("Send Read Option: Fail\n");
+            return 1;
+        }
+        
+        if (!Read(u8Buff, u8ReadOptionRespond)) {
+            printf("Read Read Option: Fail\n");
+            return 1;
+        }
+        
+        /*printf("CONFIG: ");
+        for (int i=0;i<30;i++){
+            printf("%02X ",u8Buff[i]);
+        }
+        printf("\n");*/
     }
 
 	/* Set Flash Address to 0 */
