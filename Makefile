@@ -6,7 +6,13 @@ else
 	CPP=g++
 endif
 
-LIBS=-lusb-1.0
+ifneq (,$(findstring darwin,$(OS_NAME)))
+	LIBS=/usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.a /usr/local/Cellar/libusb-compat/0.1.5_1/lib/libusb.a -ldl -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
+else
+	LIBS=-lusb-1.0
+endif
+
+
 SRCS=main.cpp KT_BinIO.cpp KT_ProgressBar.cpp ser_posix.c ser_win32.c
 OBJS=$(SRCS:.cpp=.o)
 TARGET=vnproch55x
