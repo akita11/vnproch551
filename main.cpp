@@ -50,7 +50,7 @@ uint8_t u8AddessCmd[64] = {
 };
 uint8_t u8AddessRespond = 6;
 
-/* Erase ??? */
+/* Erase ??? , the 4th byte need to be 9 on CH549*/
 uint8_t u8EraseCmd[64] = {
 	0xA4, 0x01, 0x00, 0x08
 };
@@ -462,6 +462,9 @@ int main(int argc, char const *argv[])
     }
 
 	/* Erase or unknow */
+    if (u8FamilyID == 0x12) {
+        u8EraseCmd[3] = 0x09;
+    }
     if (usingSerial){
         if (!WriteSerial(&serialFd, u8EraseCmd, u8EraseCmd[1] + 3)) {
             printf("Send Erase: Fail\n");
