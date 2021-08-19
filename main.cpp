@@ -465,6 +465,7 @@ int main(int argc, char const *argv[])
     if (u8FamilyID == 0x12) {
         //each unit in erase will do 1024 bytes
         uint8_t eraseValue = (ktBin.u32Size + 1023) / 1024;
+        if (eraseValue<8) eraseValue=8;
         u8EraseCmd[3] = eraseValue;
     }
     if (usingSerial){
