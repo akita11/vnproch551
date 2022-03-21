@@ -103,12 +103,14 @@ uint32_t Write(uint8_t *p8Buff, uint8_t u8Length)
 			return 1;
 		}
 	}else{
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
 		unsigned long ioLength = u8Length;
 		if ( CH375WriteData(0,p8Buff,&ioLength) ){
 			return 1;
 		}else{
 			return 0;
 		}
+#endif
 	}
 	return 0;
 }
@@ -138,12 +140,14 @@ uint32_t Read(uint8_t *p8Buff, uint8_t u8Length)
 			return 1;
 		}
 	}else{
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
 		unsigned long ioLength = u8Length;
 		if ( CH375ReadData(0,p8Buff,&ioLength) ){
 			return 1;
 		}else{
 			return 0;
 		}
+#endif
 	}
 	return 0;
 }
@@ -239,11 +243,6 @@ int main(int argc, char const *argv[])
 					printf("CH375 open OK\n");
 					libusbNeeded = 0;
 					
-					//struct libusb_device_descriptor desc;	//todo write own version
-					//unsigned long descReadLen = sizeof(desc);
-					//if ( CH375GetConfigDescr(0,&desc,&descReadLen) ){
-					//	printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
-					//}
 					fflush(stdout);
 				}else{
 					printf("CH375 open failed\n");
