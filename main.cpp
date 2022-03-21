@@ -7,6 +7,11 @@
 #include "KT_ProgressBar.h"
 #include "serial.h"
 #include <unistd.h>
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
+#include "CH375DLL.h"
+uint8_t usingCH375Driver = 0;
+HINSTANCE hDLL;
+#endif
 
 KT_BinIO ktFlash;
 
@@ -203,19 +208,51 @@ int main(int argc, char const *argv[])
         
         serial_drain(&serialFd,0);
     }else{
-        h = libusb_open_device_with_vid_pid(NULL, 0x4348, 0x55e0);
-        
-        if (h == NULL) {
-            printf("Found no CH55x USB\n");
-            return 1;
-        }
-        
-        struct libusb_device_descriptor desc;
-        if (libusb_get_device_descriptor(libusb_get_device(h), &desc) >= 0 ) {
-            printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
-        }
+		uint8_t libusbNeeded = 1;
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
+		//try CH375 first
+		{
+			unsigned long ch375Version = CH375GetVersion();
+			printf("ch375Version %d\n",ch375Version);
+			unsigned long usbId = CH375GetUsbID(0);
+			printf("CH375GetUsbID %x\n",usbId);
+			/*if (usbId == 0x55e04348UL){
+				if ( (unsigned int)(CH375OpenDevice(0)) > 0){
+					printf("CH375 open OK\n");
+					libusbNeeded = 0;
+					
+					struct libusb_device_descriptor desc;
+					unsigned long descReadLen = sizeof(&desc);
+					if ( CH375GetConfigDescr(0,&desc,&descReadLen) ){
+						printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
+					}
+					
 
-        libusb_claim_interface(h, 0);
+					
+					
+					
+				}else{
+					printf("CH375 open failed\n");
+					return 1;
+				}
+			}*/
+		}
+#endif	
+		if (libusbNeeded){
+			h = libusb_open_device_with_vid_pid(NULL, 0x4348, 0x55e0);
+			
+			if (h == NULL) {
+				printf("Found no CH55x USB\n");
+				return 1;
+			}
+			
+			struct libusb_device_descriptor desc;
+			if (libusb_get_device_descriptor(libusb_get_device(h), &desc) >= 0 ) {
+				printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
+			}
+
+			libusb_claim_interface(h, 0);
+		}
     }
 	
 	/* Detect MCU */
