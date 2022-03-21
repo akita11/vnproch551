@@ -88,7 +88,7 @@ uint8_t u8ReadCmd[64] = {
 };
 uint8_t u8ReadRespond = 6;
 
-libusb_device_handle *h;
+libusb_device_handle *h = NULL;
 
 uint32_t Write(uint8_t *p8Buff, uint8_t u8Length);
 uint32_t Read(uint8_t *p8Buff, uint8_t u8Length);
@@ -96,10 +96,19 @@ uint32_t Read(uint8_t *p8Buff, uint8_t u8Length);
 uint32_t Write(uint8_t *p8Buff, uint8_t u8Length)
 {
 	int len;
-	if (libusb_bulk_transfer(h, 0x02, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
-		return 0;
-	} else {
-		return 1;
+	if (h){
+		if (libusb_bulk_transfer(h, 0x02, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
+			return 0;
+		} else {
+			return 1;
+		}
+	}else{
+		unsigned long ioLength = u8Length;
+		if ( CH375WriteData(0,p8Buff,&ioLength) ){
+			return 1;
+		}else{
+			return 0;
+		}
 	}
 	return 0;
 }
@@ -122,10 +131,19 @@ uint32_t WriteSerial(union filedescriptor *fd, uint8_t *p8Buff, uint8_t u8Length
 uint32_t Read(uint8_t *p8Buff, uint8_t u8Length)
 {
 	int len;
-	if (libusb_bulk_transfer(h, 0x82, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
-		return 0;
-	} else {
-		return 1;
+	if (h){
+		if (libusb_bulk_transfer(h, 0x82, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
+			return 0;
+		} else {
+			return 1;
+		}
+	}else{
+		unsigned long ioLength = u8Length;
+		if ( CH375ReadData(0,p8Buff,&ioLength) ){
+			return 1;
+		}else{
+			return 0;
+		}
 	}
 	return 0;
 }
@@ -216,26 +234,22 @@ int main(int argc, char const *argv[])
 			printf("ch375Version %d\n",ch375Version);
 			unsigned long usbId = CH375GetUsbID(0);
 			printf("CH375GetUsbID %x\n",usbId);
-			/*if (usbId == 0x55e04348UL){
+			if (usbId == 0x55e04348UL){
 				if ( (unsigned int)(CH375OpenDevice(0)) > 0){
 					printf("CH375 open OK\n");
 					libusbNeeded = 0;
 					
-					struct libusb_device_descriptor desc;
-					unsigned long descReadLen = sizeof(&desc);
-					if ( CH375GetConfigDescr(0,&desc,&descReadLen) ){
-						printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
-					}
-					
-
-					
-					
-					
+					//struct libusb_device_descriptor desc;	//todo write own version
+					//unsigned long descReadLen = sizeof(desc);
+					//if ( CH375GetConfigDescr(0,&desc,&descReadLen) ){
+					//	printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
+					//}
+					fflush(stdout);
 				}else{
 					printf("CH375 open failed\n");
 					return 1;
 				}
-			}*/
+			}
 		}
 #endif	
 		if (libusbNeeded){
