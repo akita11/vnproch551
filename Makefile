@@ -9,7 +9,11 @@ endif
 ifneq (,$(findstring darwin,$(OS_NAME)))
 	LIBS=/usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.a /usr/local/Cellar/libusb-compat/0.1.5_1/lib/libusb.a -ldl -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
 else
+ifneq (,$(findstring cygwin,$(OS_NAME)))
+	LIBS=-lusb-1.0 -Wl,--enable-stdcall-fixup CH375DLL.dll
+else
 	LIBS=-lusb-1.0
+endif
 endif
 
 

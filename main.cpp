@@ -7,6 +7,11 @@
 #include "KT_ProgressBar.h"
 #include "serial.h"
 #include <unistd.h>
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
+#include "CH375DLL.h"
+uint8_t usingCH375Driver = 0;
+HINSTANCE hDLL;
+#endif
 
 KT_BinIO ktFlash;
 
@@ -83,7 +88,7 @@ uint8_t u8ReadCmd[64] = {
 };
 uint8_t u8ReadRespond = 6;
 
-libusb_device_handle *h;
+libusb_device_handle *h = NULL;
 
 uint32_t Write(uint8_t *p8Buff, uint8_t u8Length);
 uint32_t Read(uint8_t *p8Buff, uint8_t u8Length);
@@ -91,10 +96,21 @@ uint32_t Read(uint8_t *p8Buff, uint8_t u8Length);
 uint32_t Write(uint8_t *p8Buff, uint8_t u8Length)
 {
 	int len;
-	if (libusb_bulk_transfer(h, 0x02, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
-		return 0;
-	} else {
-		return 1;
+	if (h){
+		if (libusb_bulk_transfer(h, 0x02, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
+			return 0;
+		} else {
+			return 1;
+		}
+	}else{
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
+		unsigned long ioLength = u8Length;
+		if ( CH375WriteData(0,p8Buff,&ioLength) ){
+			return 1;
+		}else{
+			return 0;
+		}
+#endif
 	}
 	return 0;
 }
@@ -117,10 +133,21 @@ uint32_t WriteSerial(union filedescriptor *fd, uint8_t *p8Buff, uint8_t u8Length
 uint32_t Read(uint8_t *p8Buff, uint8_t u8Length)
 {
 	int len;
-	if (libusb_bulk_transfer(h, 0x82, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
-		return 0;
-	} else {
-		return 1;
+	if (h){
+		if (libusb_bulk_transfer(h, 0x82, (unsigned char*)p8Buff, u8Length, &len, 5000) != 0) {
+			return 0;
+		} else {
+			return 1;
+		}
+	}else{
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
+		unsigned long ioLength = u8Length;
+		if ( CH375ReadData(0,p8Buff,&ioLength) ){
+			return 1;
+		}else{
+			return 0;
+		}
+#endif
 	}
 	return 0;
 }
@@ -203,19 +230,42 @@ int main(int argc, char const *argv[])
         
         serial_drain(&serialFd,0);
     }else{
-        h = libusb_open_device_with_vid_pid(NULL, 0x4348, 0x55e0);
-        
-        if (h == NULL) {
-            printf("Found no CH55x USB\n");
-            return 1;
-        }
-        
-        struct libusb_device_descriptor desc;
-        if (libusb_get_device_descriptor(libusb_get_device(h), &desc) >= 0 ) {
-            printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
-        }
+		uint8_t libusbNeeded = 1;
+#if defined(WIN32NATIVE) || defined(_WIN32_WINNT) ||defined(__WIN32__)
+		//try CH375 first
+		{
+			unsigned long ch375Version = CH375GetVersion();
+			printf("ch375Version %d\n",ch375Version);
+			unsigned long usbId = CH375GetUsbID(0);
+			printf("CH375GetUsbID %x\n",usbId);
+			if (usbId == 0x55e04348UL){
+				if ( (unsigned int)(CH375OpenDevice(0)) > 0){
+					printf("CH375 open OK\n");
+					libusbNeeded = 0;
+					
+					fflush(stdout);
+				}else{
+					printf("CH375 open failed\n");
+					return 1;
+				}
+			}
+		}
+#endif	
+		if (libusbNeeded){
+			h = libusb_open_device_with_vid_pid(NULL, 0x4348, 0x55e0);
+			
+			if (h == NULL) {
+				printf("Found no CH55x USB\n");
+				return 1;
+			}
+			
+			struct libusb_device_descriptor desc;
+			if (libusb_get_device_descriptor(libusb_get_device(h), &desc) >= 0 ) {
+				printf("DeviceVersion of CH55x: %d.%02d \n", ((desc.bcdDevice>>12)&0x0F)*10+((desc.bcdDevice>>8)&0x0F),((desc.bcdDevice>>4)&0x0F)*10+((desc.bcdDevice>>0)&0x0F));
+			}
 
-        libusb_claim_interface(h, 0);
+			libusb_claim_interface(h, 0);
+		}
     }
 	
 	/* Detect MCU */
