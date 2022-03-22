@@ -3,18 +3,17 @@ OS_NAME := $(shell uname -s | tr A-Z a-z)
 ifneq (,$(findstring cygwin,$(OS_NAME)))
 	CPP=i686-w64-mingw32-g++
 else
-	CPP=g++ 
+	CPP=g++
 endif
 
-# brew install libusb libusb-cmpat
 ifneq (,$(findstring darwin,$(OS_NAME)))
-#	LIBS=/usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.a /usr/local/Cellar/libusb-compat/0.1.5_1/lib/libusb.a -ldl -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
-	LIBS=/opt/homebrew/Cellar/libusb/1.0.24/lib/libusb-1.0.a /opt/homebrew/Cellar/libusb-compat/0.1.5_1/lib/libusb.a -ldl -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
-# add include path, ref: https://hack-le.com/45126492-2/
-	INCLUDE=-I /opt/homebrew/Cellar/libusb/1.0.24/include
-
+	LIBS=/usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.a /usr/local/Cellar/libusb-compat/0.1.5_1/lib/libusb.a -ldl -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
+else
+ifneq (,$(findstring cygwin,$(OS_NAME)))
+	LIBS=-lusb-1.0 -Wl,--enable-stdcall-fixup CH375DLL.dll
 else
 	LIBS=-lusb-1.0
+endif
 endif
 
 
@@ -26,7 +25,7 @@ $(TARGET): $(OBJS)
 	$(CPP) $(OBJS) $(LIBS) -o $@ 
 
 %.o:%.cpp
-	$(CPP) $(INCLUDE) -c $< -o $@
+	$(CPP) -c $< -o $@
 all:
 	$(TARGET)
 install: $(TARGET)
